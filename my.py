@@ -7,7 +7,7 @@ import PIL.Image
 import pathlib
 import matplotlib.pyplot
 
-
+batch = 1
 
 print("all libs are loaded" + "-"*50)
 
@@ -19,8 +19,8 @@ device = torch.device("cpu")
 
 class MyDataset(torch.utils.data.Dataset):
     def __init__(self):
-        X = pathlib.Path("../data/")
-        Y = pathlib.Path("../data_test/")
+        X = pathlib.Path("../data_small/")
+        Y = pathlib.Path("../data_test_small/")
         self.X_data = [str(i) for i in X.iterdir()]
         self.Y_data = [str(i) for i in Y.iterdir()]
         
@@ -33,7 +33,7 @@ class MyDataset(torch.utils.data.Dataset):
 my_dataset = MyDataset()
 print("data loaded" + "-"*50)
 
-loader = torch.utils.data.DataLoader(my_dataset, shuffle = True, batch_size = 39)
+loader = torch.utils.data.DataLoader(my_dataset, shuffle = True, batch_size = batch)
 
 class net(torch.nn.Module):
     def __init__(self):
@@ -98,7 +98,7 @@ fig, ax = matplotlib.pyplot.subplots()
 x_data, y_data = [], []
 iid = 0
 
-for i in range(0, 20):
+for i in range(0, 100):
     total_loss = 0
     for id,(x,y) in enumerate(loader):
         x = x.to(device)
@@ -110,7 +110,7 @@ for i in range(0, 20):
         optimizer.step()
         total_loss += loss.item()
         x_data.append(iid)
-        y_data.append(total_loss/10/(id + 1))
+        y_data.append(total_loss/batch/(id + 1))
         ax.clear()
         ax.plot(x_data, y_data, 'b-o')
         ax.set_xlim(0, max(10, iid))
@@ -126,20 +126,18 @@ torch.save(model, "model.pth")
 matplotlib.pyplot.ioff()
 matplotlib.pyplot.show()
 
-
-
 '''
 #test the input and output
 model = torch.load("model.pth", weights_only = False)
 model.eval()
-image1 = my_dataset[0][0].permute(1,2,0)
-image11 = my_dataset[0][1].permute(1,2,0)
-image2 = model(my_dataset[0][0].unsqueeze(0))[0].permute(1,2,0).detach()
-'''for i in image2:
+image1 = my_dataset[1][0].permute(1,2,0)
+image11 = my_dataset[1][1].permute(1,2,0)
+image2 = model(my_dataset[1][0].unsqueeze(0))[0].permute(1,2,0).detach()
+for i in image2:
     for j in i:
         if j != 0:
             j *= 50
-            '''
+        
 fig, axes = matplotlib.pyplot.subplots(1,3)
 axes[0].imshow(image1)
 axes[1].imshow(image11)

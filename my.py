@@ -19,8 +19,8 @@ device = torch.device("cpu")
 
 class MyDataset(torch.utils.data.Dataset):
     def __init__(self):
-        X = pathlib.Path("../data_small/")
-        Y = pathlib.Path("../data_test_small/")
+        X = pathlib.Path("../data/")
+        Y = pathlib.Path("../data_test/")
         self.X_data = [str(i) for i in X.iterdir()]
         self.Y_data = [str(i) for i in Y.iterdir()]
         
@@ -41,28 +41,27 @@ class net(torch.nn.Module):
         
         self.conv1 = torch.nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
         self.bn1 = torch.nn.BatchNorm2d(32)  
-        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn2 = torch.nn.BatchNorm2d(32)
-        self.conv3 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn3 = torch.nn.BatchNorm2d(32)
-        self.conv4 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn4 = torch.nn.BatchNorm2d(32)
-        self.conv5 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.bn2 = torch.nn.BatchNorm2d(64)
+        self.conv3 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = torch.nn.BatchNorm2d(128)
+        self.conv4 = torch.nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        self.bn4 = torch.nn.BatchNorm2d(64)
+        self.conv5 = torch.nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
         self.bn5 = torch.nn.BatchNorm2d(32)  
-        self.conv6 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn6 = torch.nn.BatchNorm2d(32)
-        self.conv7 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn7 = torch.nn.BatchNorm2d(32)
-        self.conv8 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn8 = torch.nn.BatchNorm2d(32)
+        self.conv6 = torch.nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1)
+        self.bn6 = torch.nn.BatchNorm2d(16)
+        self.conv7 = torch.nn.Conv2d(16, 4, kernel_size=3, stride=1, padding=1)
+        self.bn7 = torch.nn.BatchNorm2d(4)
+        self.conv8 = torch.nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1)
         
-        self.transpose_conv1 = torch.nn.ConvTranspose2d(32, 32, kernel_size=4, stride=2, padding=1)
-        self.bn4 = torch.nn.BatchNorm2d(32)
-        self.transpose_conv2 = torch.nn.ConvTranspose2d(32, 32, kernel_size=4, stride=2, padding=1)
-        self.bn5 = torch.nn.BatchNorm2d(32)
-        self.transpose_conv3 = torch.nn.ConvTranspose2d(32, 32, kernel_size=4, stride=2, padding=1)
-        self.bn6 = torch.nn.BatchNorm2d(32)
-        self.transpose_conv4 = torch.nn.ConvTranspose2d(32, 1, kernel_size=4, stride=2, padding=1)
+        self.linear1 = torch.nn.Linear(16*16, 1000)
+        self.bn8 = torch.nn.BatchNorm1d(1000)
+        self.linear2 = torch.nn.Linear(1000, 1200)
+        self.bn9 = torch.nn.BatchNorm1d(1200)
+        self.linear3 = torch.nn.Linear(1200, 5000)
+        self.bn10 = torch.nn.BatchNorm1d(5000)
+        self.linear4 = torch.nn.Linear(5000, 256*256)
 
         
     def forward(self, x):
@@ -73,17 +72,18 @@ class net(torch.nn.Module):
         x = torch.nn.functional.relu(self.bn3(self.conv3(x)))
         x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
         x = torch.nn.functional.relu(self.bn4(self.conv4(x)))
-        x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
         x = torch.nn.functional.relu(self.bn5(self.conv5(x)))
+        x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
         x = torch.nn.functional.relu(self.bn6(self.conv6(x)))
         x = torch.nn.functional.relu(self.bn7(self.conv7(x)))
-        x = torch.nn.functional.relu(self.bn8(self.conv8(x)))
-        
-        x = torch.nn.functional.relu(self.bn4(self.transpose_conv1(x)))
-        x = torch.nn.functional.relu(self.bn5(self.transpose_conv2(x)))
-        x = torch.nn.functional.relu(self.bn6(self.transpose_conv3(x)))
-        x = torch.nn.functional.relu(self.transpose_conv4(x))
+        x = torch.nn.functional.relu(self.conv8(x))
 
+        x = x.view(x.size(0), -1)
+        x = torch.nn.functional.relu(self.bn8(self.linear1(x)))
+        x = torch.nn.functional.relu(self.bn9(self.linear2(x)))
+        x = torch.nn.functional.relu(self.bn10(self.linear3(x)))
+        x = torch.nn.functional.relu(self.linear4(x))
+        x = x.view(batch, 1, 256, 256)
         return x
    
 model = net()
@@ -98,7 +98,7 @@ fig, ax = matplotlib.pyplot.subplots()
 x_data, y_data = [], []
 iid = 0
 
-for i in range(0, 100):
+for i in range(0, 10):
     total_loss = 0
     for id,(x,y) in enumerate(loader):
         x = x.to(device)
@@ -130,17 +130,14 @@ matplotlib.pyplot.show()
 #test the input and output
 model = torch.load("model.pth", weights_only = False)
 model.eval()
-image1 = my_dataset[1][0].permute(1,2,0)
-image11 = my_dataset[1][1].permute(1,2,0)
-image2 = model(my_dataset[1][0].unsqueeze(0))[0].permute(1,2,0).detach()
-for i in image2:
-    for j in i:
-        if j != 0:
-            j *= 50
+image1 = my_dataset[0][0].permute(1,2,0)
+image11 = my_dataset[0][1].permute(1,2,0)
+image2 = model(my_dataset[0][0].unsqueeze(0))[0].permute(1,2,0).detach()
+print(model(my_dataset[0][0].unsqueeze(0))[0])
         
 fig, axes = matplotlib.pyplot.subplots(1,3)
 axes[0].imshow(image1)
 axes[1].imshow(image11)
-axes[2].imshow(image2)
+axes[2].imshow(image2, cmap = 'hot')
 matplotlib.pyplot.show()
 

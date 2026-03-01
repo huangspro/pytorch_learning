@@ -7,15 +7,16 @@ import PIL.Image
 import pathlib
 import matplotlib.pyplot
 
-batch = 1
+batch = 8
+device = torch.device("cuda")
 
-print("all libs are loaded" + "-"*50)
+torch.cuda.empty_cache()
 
 transform = torchvision.transforms.Compose([
     torchvision.transforms.Resize((256, 256)),
     torchvision.transforms.ToTensor()
 ])
-device = torch.device("cpu")
+
 
 class MyDataset(torch.utils.data.Dataset):
     def __init__(self):
@@ -38,60 +39,98 @@ loader = torch.utils.data.DataLoader(my_dataset, shuffle = True, batch_size = ba
 class net(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        
+
         self.conv1 = torch.nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
-        self.bn1 = torch.nn.BatchNorm2d(32)  
-        self.conv2 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.bn2 = torch.nn.BatchNorm2d(64)
-        self.conv3 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.bn3 = torch.nn.BatchNorm2d(128)
-        self.conv4 = torch.nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = torch.nn.BatchNorm2d(32)
+
+        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.bn2 = torch.nn.BatchNorm2d(32)
+
+        self.conv3 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.bn3 = torch.nn.BatchNorm2d(64)
+
+        self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
         self.bn4 = torch.nn.BatchNorm2d(64)
-        self.conv5 = torch.nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
-        self.bn5 = torch.nn.BatchNorm2d(32)  
-        self.conv6 = torch.nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1)
-        self.bn6 = torch.nn.BatchNorm2d(16)
-        self.conv7 = torch.nn.Conv2d(16, 4, kernel_size=3, stride=1, padding=1)
-        self.bn7 = torch.nn.BatchNorm2d(4)
-        self.conv8 = torch.nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1)
-        
-        self.linear1 = torch.nn.Linear(16*16, 1000)
-        self.bn8 = torch.nn.BatchNorm1d(1000)
-        self.linear2 = torch.nn.Linear(1000, 1200)
-        self.bn9 = torch.nn.BatchNorm1d(1200)
-        self.linear3 = torch.nn.Linear(1200, 5000)
-        self.bn10 = torch.nn.BatchNorm1d(5000)
-        self.linear4 = torch.nn.Linear(5000, 256*256)
 
-        
+        self.conv5 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn5 = torch.nn.BatchNorm2d(128)
+
+        self.conv6 = torch.nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn6 = torch.nn.BatchNorm2d(128)
+
+        self.conv7 = torch.nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn7 = torch.nn.BatchNorm2d(128)
+
+        self.conv8 = torch.nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
+        self.bn8 = torch.nn.BatchNorm2d(256)
+
+        self.conv9 = torch.nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)
+        self.bn9 = torch.nn.BatchNorm2d(256)
+
+        self.conv10 = torch.nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)
+        self.bn10 = torch.nn.BatchNorm2d(256)
+
+        self.conv11 = torch.nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)
+        self.bn11 = torch.nn.BatchNorm2d(256)
+
+        self.conv12 = torch.nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
+        self.bn12 = torch.nn.BatchNorm2d(512)
+
+        self.conv13 = torch.nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
+        self.bn13 = torch.nn.BatchNorm2d(512)
+
+        self.conv14 = torch.nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
+        self.bn14 = torch.nn.BatchNorm2d(512)
+
+        self.conv15 = torch.nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
+        self.bn15 = torch.nn.BatchNorm2d(512)
+
+        self.conv16 = torch.nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
+        self.bn16 = torch.nn.BatchNorm2d(512)
+
+        # -------- Decoder --------
+        self.tr1 = torch.nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1)
+        self.bn17 = torch.nn.BatchNorm2d(256)
+
+        self.tr2 = torch.nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
+        self.bn18 = torch.nn.BatchNorm2d(128)
+
+        self.tr3 = torch.nn.ConvTranspose2d(128, 1, kernel_size=4, stride=2, padding=1)
+        self.bn19 = torch.nn.BatchNorm2d(1)
+
     def forward(self, x):
-        x = torch.nn.functional.relu(self.bn1(self.conv1(x)))
-        x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
-        x = torch.nn.functional.relu(self.bn2(self.conv2(x)))
-        x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
-        x = torch.nn.functional.relu(self.bn3(self.conv3(x)))
-        x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
-        x = torch.nn.functional.relu(self.bn4(self.conv4(x)))
-        x = torch.nn.functional.relu(self.bn5(self.conv5(x)))
-        x = torch.nn.functional.max_pool2d(x, kernel_size = 2, stride = 2)
-        x = torch.nn.functional.relu(self.bn6(self.conv6(x)))
-        x = torch.nn.functional.relu(self.bn7(self.conv7(x)))
-        x = torch.nn.functional.relu(self.conv8(x))
+        # -------- Encoder --------
+        x =  torch.nn.functional.relu(self.bn1(self.conv1(x)))
+        x =  torch.nn.functional.relu(self.bn2(self.conv2(x)))
+        x =  torch.nn.functional.max_pool2d( torch.nn.functional.relu(self.bn3(self.conv3(x))), kernel_size=2, stride=2) 
+        x =  torch.nn.functional.relu(self.bn4(self.conv4(x)))
+        x =  torch.nn.functional.max_pool2d( torch.nn.functional.relu(self.bn5(self.conv5(x))), kernel_size=2, stride=2)  
+        x =  torch.nn.functional.relu(self.bn6(self.conv6(x)))
+        x =  torch.nn.functional.relu(self.bn7(self.conv7(x) + x))
+        x =  torch.nn.functional.max_pool2d( torch.nn.functional.relu(self.bn8(self.conv8(x))), kernel_size=2, stride=2)  
+        x =  torch.nn.functional.relu(self.bn9(self.conv9(x)))
+        x =  torch.nn.functional.relu(self.bn10(self.conv10(x) + x))
+        x =  torch.nn.functional.relu(self.bn11(self.conv11(x) + x))
+        x =  torch.nn.functional.relu(self.bn12(self.conv12(x)))
+        x =  torch.nn.functional.relu(self.bn13(self.conv13(x) + x))
+        x =  torch.nn.functional.relu(self.bn14(self.conv14(x) + x))
+        x =  torch.nn.functional.relu(self.bn15(self.conv15(x) + x))
+        x =  torch.nn.functional.relu(self.bn16(self.conv16(x) + x))
 
-        x = x.view(x.size(0), -1)
-        x = torch.nn.functional.relu(self.bn8(self.linear1(x)))
-        x = torch.nn.functional.relu(self.bn9(self.linear2(x)))
-        x = torch.nn.functional.relu(self.bn10(self.linear3(x)))
-        x = torch.nn.functional.relu(self.linear4(x))
-        x = x.view(batch, 1, 256, 256)
+        # -------- Decoder --------
+        x =  torch.nn.functional.relu(self.bn17(self.tr1(x)))  
+        x =  torch.nn.functional.relu(self.bn18(self.tr2(x)))  
+        x =  torch.nn.functional.relu(self.bn19(self.tr3(x))) 
+
         return x
    
-model = net()
+# model = net()
+model = torch.load("model.pth", weights_only = False)
 model = model.to(device)
 print("model loaded" + "-"*50)
 
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr = 0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr = 0.000002)
 '''
 matplotlib.pyplot.ion()  # 开启交互模式
 fig, ax = matplotlib.pyplot.subplots()
@@ -129,11 +168,16 @@ matplotlib.pyplot.show()
 '''
 #test the input and output
 model = torch.load("model.pth", weights_only = False)
+model = model.to(device)
 model.eval()
-image1 = my_dataset[0][0].permute(1,2,0)
-image11 = my_dataset[0][1].permute(1,2,0)
-image2 = model(my_dataset[0][0].unsqueeze(0))[0].permute(1,2,0).detach()
-print(model(my_dataset[0][0].unsqueeze(0))[0])
+
+index = 5
+
+image1 = my_dataset[index][0].permute(1,2,0)
+image11 = my_dataset[index][1].permute(1,2,0)
+#image2 = model(my_dataset[index][0].unsqueeze(0).to(device))[0].permute(1,2,0).detach().cpu()
+image2 = model(transform(PIL.Image.open("ok.jpg").convert('L')).unsqueeze(0).to(device))[0].permute(1,2,0).detach().cpu()
+
         
 fig, axes = matplotlib.pyplot.subplots(1,3)
 axes[0].imshow(image1)
